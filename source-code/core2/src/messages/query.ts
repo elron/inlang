@@ -70,19 +70,8 @@ const updatedMessage = unwrap(
 	}),
 )
 
-const message3 = inlang.messages.query.update()
+// ------ Delete ------
 
-const message4 = inlang.messages.query.upsertMany([
-	{
-		id: "myMessageId",
-		languageTag: "en",
-		pattern: [{ type: "Text", value: "Hello World" }],
-	},
-	{
-		id: "myMessageId",
-		languageTag: "en",
-		pattern: [{ type: "Text", value: "Hello World" }],
-	},
-])
-
-const message5 = inlang.messages.query.delete({ where: { id: "myMessageId", languageTag: "en" } })
+for (const languageTag of ["de", "en", "fr", "es"]) {
+	inlang.messages.query.delete({ where: { id: "myMessageId", languageTag } })
+}
