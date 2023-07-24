@@ -1,5 +1,6 @@
 import { createInlang } from "./app/createInlang.js"
 import type { InlangConfig } from "./config/schema.js"
+import type { LanguageTag } from './languageTag.js'
 import type {  MessageLintRule } from "./lint/api.js"
 import type { Plugin_Proposal_2 } from "./plugin/api.js"
 
@@ -29,6 +30,14 @@ const missingMessage: MessageLintRule = {
 }
 
 // --------------------- PLUGIN ---------------------
+
+// manually initialize the runtime
+import { initRuntime } from '@inlang/sdk-js/runtime'
+const resources = await inlang.config.readResources()
+const { i, switchLanguage } = initRuntime({
+	readResource: (languageTag: LanguageTag) => resources.find(({ languageTag }) => languageTag === languageTag),
+})
+switchLanguage('de')
 
 export const myPlugin: Plugin_Proposal_2<{ pathPattern: string }> = {
 	meta: {
