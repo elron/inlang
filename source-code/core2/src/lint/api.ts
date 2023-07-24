@@ -4,7 +4,7 @@ import type { Message } from "../messages/schema.js"
 
 export type LintRule = {
 	id: `${string}.${string}`
-	displayName: Record<string, string>
+	displayName: string
 	/**
 	 * The default level of the lint rule.
 	 *

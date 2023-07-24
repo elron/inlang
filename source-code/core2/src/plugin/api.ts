@@ -35,11 +35,13 @@ type PluginOptions = {
 	pathPattern: string
 }
 
+import { i } from '@inlang/sdk-js'
+
 export const examplePlugin: Plugin<PluginOptions> = {
 	meta: {
 		id: "inlang.plugin-i18next",
-		displayName: "i18next",
-		description: "i18next plugin for inlang",
+		displayName: i('displayName'),
+		description: i('description'),
 		keywords: ["i18next", "react", "nextjs"],
 	},
 	setup: ({ options, inlang }) => {

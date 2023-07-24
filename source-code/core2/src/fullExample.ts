@@ -5,12 +5,11 @@ import type { Plugin_Proposal_2 } from "./plugin/api.js"
 
 // --------------------- LINT RULE ---------------------
 
+import { i } from '@inlang/sdk-js'
+
 const missingMessage: MessageLintRule = {
 	id: "inlang.missingMessage",
-	displayName: {
-		en: "Missing message",
-		de: "Fehlende Nachricht",
-	},
+	displayName: i('displayName'),
 	defaultLevel: "error",
 	message: ({ message, inlang, report }) => {
 		if (message.languageTag !== inlang.config.sourceLanguageTag) {
@@ -22,7 +21,7 @@ const missingMessage: MessageLintRule = {
 				report({
 					languageTag,
 					messageId: message.id,
-					content: `Message "${message.id}" is missing in language tag "${languageTag}".`,
+					content: i('report-missingMessage'),
 				})
 			}
 		}
@@ -34,7 +33,7 @@ const missingMessage: MessageLintRule = {
 export const myPlugin: Plugin_Proposal_2<{ pathPattern: string }> = {
 	meta: {
 		id: "inlang.myPlugin",
-		displayName: "My Plugin",
+		displayName: i('displayName'),
 	},
 	setup: ({ inlang, options }) => {
 		return {
