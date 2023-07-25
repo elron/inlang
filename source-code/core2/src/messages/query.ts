@@ -1,8 +1,10 @@
+import { writable, derived, readonly, get } from 'svelte/store'
 import type { Message } from "./schema.js"
 
 export type MessageQueryApi = {
+	subscribe: (fn: (message: Message[]) => void) => void
 	create: (args: { data: Message }) => void
-	get: (args: { where: { id: Message["id"] } }) => Message | undefined
+	get: (args: { where: { id: Message["id"] } }) => { subscribe: (fn: (message: Message | undefined) => void) => void }
 	update: (args: { where: { id: Message["id"] }; data: Partial<Message> }) => void
 	upsert: (args: { where: { id: Message["id"] }; data: Message }) => void
 	delete: (args: { where: { id: Message["id"] } }) => void
@@ -13,29 +15,37 @@ export type MessageQueryApi = {
  *
  * Creates an index internally for faster get operations.
  */
-export function createQuery(messages: Array<Message>): MessageQueryApi {
-	const index = new Map(messages.map((message) => [message.id, message]))
+export function createQuery(messagesInit: Array<Message>): MessageQueryApi {
+	const messages = writable<Message[]>(messagesInit)
+	const { subscribe } = readonly(messages)
+
 	return {
-		create: ({ data }) => {
-			index.set(data.id, data)
-		},
+		subscribe,
+		// query
 		get: ({ where }) => {
-			return index.get(where.id)
+			const { subscribe } = derived(messages, $messages => $messages.find(({ id }) => id === where.id))
+
+			return {
+				subscribe,
+			}
+		},
+		// mutation
+		create: ({ data }) => {
+			messages.update((messages) => [...messages, data])
 		},
 		update: ({ where, data }) => {
-			const message = index.get(where.id)
-			if (message === undefined) return
-			index.set(where.id, { ...message, ...data })
+			messages.update(messages => messages.map(m => (m.id === where.id ? { ...m, ...data } : m)))
 		},
 		upsert: ({ where, data }) => {
-			const message = index.get(where.id)
+			const message = get(messages).find(({ id }) => id === where.id)
 			if (message === undefined) {
-				return index.set(where.id, data)
+				messages.update(messages => [...messages, data])
+			} else {
+				messages.update(messages => messages.map(m => (m.id === where.id ? { ...m, ...data } : m)))
 			}
-			index.set(where.id, { ...message, ...data })
 		},
 		delete: ({ where }) => {
-			index.delete(where.id)
+			messages.update(messages => messages.filter(({ id }) => id !== where.id))
 		},
 	}
 }
