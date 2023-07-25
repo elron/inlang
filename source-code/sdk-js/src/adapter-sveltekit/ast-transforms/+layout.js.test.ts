@@ -14,8 +14,18 @@ describe("transformLayoutJs", () => {
 				const transformed = transformLayoutJs("", config, code, true)
 
 				expect(transformed).toMatchInlineSnapshot(`
-					"import { initRootLayoutLoadWrapper } from '@inlang/sdk-js/adapter-sveltekit/shared';
-					export const load = initRootLayoutLoadWrapper({}).use(() => { });"
+					"if (import.meta.hot) {
+					    import.meta.hot.on('inlang-messages-changed', async (data) => {
+					        // TODO: get actual language from somewhere
+					        if (inlang_hmr_language === data.languageTag)
+					            location.reload();
+					    });
+					}
+					import { initRootLayoutLoadWrapper } from '@inlang/sdk-js/adapter-sveltekit/shared';
+					let inlang_hmr_language;
+					export const load = initRootLayoutLoadWrapper({}).use((_, { language }) => {
+					    inlang_hmr_language = language;
+					});"
 				`)
 			})
 
@@ -25,14 +35,24 @@ describe("transformLayoutJs", () => {
 				const transformed = transformLayoutJs("", config, code, true)
 
 				expect(transformed).toMatchInlineSnapshot(`
-					"import { initLocalStorageDetector, navigatorDetector } from '@inlang/sdk-js/detectors/client';
+					"if (import.meta.hot) {
+					    import.meta.hot.on('inlang-messages-changed', async (data) => {
+					        // TODO: get actual language from somewhere
+					        if (inlang_hmr_language === data.languageTag)
+					            location.reload();
+					    });
+					}
+					import { initLocalStorageDetector, navigatorDetector } from '@inlang/sdk-js/detectors/client';
 					import { browser } from '$app/environment';
 					import { initRootLayoutLoadWrapper } from '@inlang/sdk-js/adapter-sveltekit/shared';
+					let inlang_hmr_language;
 					export const load = initRootLayoutLoadWrapper({
 					    initDetectors: browser
 					        ? () => [initLocalStorageDetector(), navigatorDetector]
 					        : undefined
-					}).use(() => { });"
+					}).use((_, { language }) => {
+					    inlang_hmr_language = language;
+					});"
 				`)
 			})
 		})
@@ -45,8 +65,18 @@ describe("transformLayoutJs", () => {
 			const transformed = transformLayoutJs("", config, code, true)
 
 			expect(transformed).toMatchInlineSnapshot(`
-				"import { initRootLayoutLoadWrapper } from '@inlang/sdk-js/adapter-sveltekit/shared';
-				export const load = initRootLayoutLoadWrapper({}).use(async () => { });"
+				"if (import.meta.hot) {
+				    import.meta.hot.on('inlang-messages-changed', async (data) => {
+				        // TODO: get actual language from somewhere
+				        if (inlang_hmr_language === data.languageTag)
+				            location.reload();
+				    });
+				}
+				import { initRootLayoutLoadWrapper } from '@inlang/sdk-js/adapter-sveltekit/shared';
+				export const load = initRootLayoutLoadWrapper({}).use(async (_, { language }) => {
+				    inlang_hmr_language = language;
+				});
+				let inlang_hmr_language;"
 			`)
 		})
 	})
@@ -67,7 +97,7 @@ describe("transformLayoutJs", () => {
 		expect(transformed).toEqual(code)
 	})
 
-	test("should transform '@inlang/sdk-js' imports correctly", () => {
+	test.only("should transform '@inlang/sdk-js' imports correctly", () => {
 		const transformed = transformLayoutJs(
 			"",
 			initTransformConfig(),
@@ -83,11 +113,20 @@ describe("transformLayoutJs", () => {
 		)
 
 		expect(transformed).toMatchInlineSnapshot(`
-			"import { initLoadWrapper } from '@inlang/sdk-js/adapter-sveltekit/shared';
+			"if (import.meta.hot) {
+			    import.meta.hot.on('inlang-messages-changed', async (data) => {
+			        // TODO: get actual language from somewhere
+			        if (inlang_hmr_language === data.languageTag)
+			            location.reload();
+			    });
+			}
+			import { initLoadWrapper } from '@inlang/sdk-js/adapter-sveltekit/shared';
 			import type { LayoutLoad } from '@sveltejs/kit';
-			export const load = initLoadWrapper().use(async((_, { languages }) => {
+			export const load = initLoadWrapper().use(async((_, { languages, language }) => {
+			    inlang_hmr_language = language;
 			    return { languages };
-			}) satisfies LayoutLoad);"
+			}) satisfies LayoutLoad);
+			let inlang_hmr_language;"
 		`)
 	})
 })

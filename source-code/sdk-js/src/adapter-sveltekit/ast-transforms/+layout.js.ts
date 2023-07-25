@@ -1,5 +1,5 @@
 import { dedent } from "ts-dedent"
-import type { SourceFile } from "ts-morph"
+import { Node, type SourceFile } from "ts-morph"
 import {
 	addImport,
 	isOptOutImportPresent,
@@ -9,6 +9,8 @@ import {
 import { wrapExportedFunction } from "../../ast-transforms/utils/wrap.js"
 import { codeToSourceFile, nodeToCode } from "../../ast-transforms/utils/js.util.js"
 import type { TransformConfig } from "../vite-plugin/config.js"
+import type { Block } from 'ts-morph'
+import { findOrCreateExport } from '../../ast-transforms/utils/exports.js'
 
 // ------------------------------------------------------------------------------------------------
 
@@ -69,31 +71,60 @@ export const transformLayoutJs = (
 
 	addImports(sourceFile, config, root, wrapperFunctionName)
 
+	injectHotReloadCode(sourceFile)
+
 	const options = root ? getOptions(config, root) : undefined
 	wrapExportedFunction(sourceFile, options, wrapperFunctionName, "load")
 	removeImport(sourceFile, "@inlang/sdk-js")
 
-	injectHotReloadCode(sourceFile)
-
 	return nodeToCode(sourceFile)
 }
 
+// ------------------------------------------------------------------------------------------------
 
 const injectHotReloadCode = (sourceFile: SourceFile) => {
-	// TODO: inject the following code:
-	// /**
-	// * @type {string | undefined}
-	// */
-	// let loadedLanguage = undefined
-	// export const load = () => {
-	// 	loadedLanguage = language
-	// }
+	addImport(sourceFile, "@inlang/sdk-js", "language")
 
-	// if (import.meta.hot) {
-	// 	import.meta.hot.on('inlang-messages-changed', async (data) => {
-	// 		// TODO: get actual language from somewhere
-	// 		if (loadedLanguage === data.languageTag)
-	// 			location.reload()
-	// 	})
-	// }
+	sourceFile.addVariableStatement({
+		declarations: [{
+			name: 'inlang_hmr_language',
+			// type: 'string',
+		}]
+	})
+
+	sourceFile.insertText(0, dedent`
+		if (import.meta.hot) {
+			import.meta.hot.on('inlang-messages-changed', async (data) => {
+				// TODO: get actual language from somewhere
+				if (inlang_hmr_language === data.languageTag)
+					location.reload()
+			})
+		}
+	`)
+
+	const loadFn = findOrCreateExport(sourceFile, 'load', '() => { }')
+	const block = findFunctionBodyBlock(loadFn)
+
+	block.insertStatements(0, dedent`
+		inlang_hmr_language = language
+	`)
+}
+
+const findFunctionBodyBlock = (node: Node): Block => {
+	if (Node.isSatisfiesExpression(node) || Node.isParenthesizedExpression(node)) {
+		return findFunctionBodyBlock(node.getExpression())
+	}
+	if (Node.isCallExpression(node)) {
+		return findFunctionBodyBlock(node.getArguments()[0]!)
+	}
+
+	if (Node.isVariableDeclaration(node)) {
+		return findFunctionBodyBlock(node.getInitializer()!)
+	}
+
+	if (Node.isArrowFunction(node) || Node.isFunctionDeclaration(node)) {
+		return node.getBody() as Block
+	}
+
+	throw new Error(`Could not find function body block for kind '${node.getKindName()}'.`)
 }
