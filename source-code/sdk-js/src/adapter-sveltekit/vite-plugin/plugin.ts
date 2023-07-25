@@ -106,6 +106,19 @@ export const plugin = () => {
 
 			return transformedCode
 		},
+
+		async handleHotUpdate(ctx) {
+			// TODO: check if we deal with a file that contains messages
+			if (ctx.file.endsWith('.json')) {
+				const languageTag = ctx.file.split('/').at(-1)?.split('.')[0]
+
+				ctx.server.ws.send({
+					type: 'custom',
+					event: 'inlang-messages-changed',
+					data: { languageTag }
+				})
+			}
+		},
 	} satisfies Plugin
 }
 

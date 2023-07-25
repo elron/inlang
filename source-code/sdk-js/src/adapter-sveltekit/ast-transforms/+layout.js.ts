@@ -73,5 +73,27 @@ export const transformLayoutJs = (
 	wrapExportedFunction(sourceFile, options, wrapperFunctionName, "load")
 	removeImport(sourceFile, "@inlang/sdk-js")
 
+	injectHotReloadCode(sourceFile)
+
 	return nodeToCode(sourceFile)
+}
+
+
+const injectHotReloadCode = (sourceFile: SourceFile) => {
+	// TODO: inject the following code:
+	// /**
+	// * @type {string | undefined}
+	// */
+	// let loadedLanguage = undefined
+	// export const load = () => {
+	// 	loadedLanguage = language
+	// }
+
+	// if (import.meta.hot) {
+	// 	import.meta.hot.on('inlang-messages-changed', async (data) => {
+	// 		// TODO: get actual language from somewhere
+	// 		if (loadedLanguage === data.languageTag)
+	// 			location.reload()
+	// 	})
+	// }
 }
