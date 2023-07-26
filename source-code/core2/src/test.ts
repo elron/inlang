@@ -1,12 +1,12 @@
 // @ts-ignore
 import * as Solid from 'solid-js/dist/solid.js'
-const { createEffect, createSignal, createMemo, createRoot, on } = Solid as typeof import('solid-js');
-import type { Accessor, Signal } from 'solid-js';
+const { createEffect, createSignal, createMemo, createRoot } = Solid as typeof import('solid-js');
+import type { Signal } from 'solid-js';
 import type { Message } from './messages/schema.js';
 
 export type MessageQueryApi = {
 	create: (args: { data: Message }) => void
-	get: (args: { where: { id: Message["id"] } }) => Accessor<Message | undefined>
+	get: (args: { where: { id: Message["id"] } }) => Message | undefined
 	update: (args: { where: { id: Message["id"] }; data: Partial<Message> }) => void
 	upsert: (args: { where: { id: Message["id"] }; data: Message }) => void
 	delete: (args: { where: { id: Message["id"] } }) => void
@@ -24,7 +24,7 @@ export function createQuery(messagesSignal: Signal<Message[]>): MessageQueryApi 
 				{
 					equals: (a, b) => JSON.stringify(a) === JSON.stringify(b)
 				}
-			)
+			)()
 		},
 		// mutation
 		create: ({ data }) => {
@@ -70,17 +70,17 @@ const createLint = (query: MessageQueryApi) => {
 			return createMemo(
 				() => {
 					const x = query.get({ where })
-					if (x() === undefined) {
+					if (x === undefined) {
 						return false
 					}
 
-					return x() >= '10'
+					return x.id >= '10'
 				},
 				undefined,
 				{
 					equals: (a, b) => JSON.stringify(a) === JSON.stringify(b)
 				}
-			)
+			)()
 		},
 	}
 }
@@ -90,18 +90,18 @@ const createApp = async () => {
 	const query = createQuery(plugin.messagesSignal);
 	const lints = createLint(query)
 
-	const xLint = lints.get({ where: { id: '12' } });
 	createEffect(() => {
-		console.log('x', xLint());
+		const xLint = lints.get({ where: { id: '12' } });
+		console.log('x', xLint);
 	});
 
 	// createEffect(() => {
 	// 	console.log(0, plugin.messagesSignal[0]());
 	// });
 
-	const firstMessage = query.get({ where: { id: '1' } });
 	createEffect(() => {
-		console.log(1, firstMessage());
+		const firstMessage = query.get({ where: { id: '1' } });
+		console.log(1, firstMessage);
 	});
 
 	await new Promise((resolve) => setTimeout(resolve, 100));
@@ -110,9 +110,9 @@ const createApp = async () => {
 	query.update({ where: { id: '1', }, data: { body: { test: 1 } } });
 	await new Promise((resolve) => setTimeout(resolve, 100));
 
-	const secondMessage = query.get({ where: { id: '2' } });
 	createEffect(() => {
-		console.log(2, secondMessage());
+		const secondMessage = query.get({ where: { id: '2' } });
+		console.log(2, secondMessage);
 	});
 
 	// delete message
@@ -128,14 +128,13 @@ const createApp = async () => {
 	query.update({ where: { id: '2', }, data: { body: { test: 2 } } });
 
 	// get message before inserting it
-	const xMessage = query.get({ where: { id: '12' } });
 	createEffect(() => {
-		console.log(12, xMessage());
+		const xMessage = query.get({ where: { id: '12' } });
+		console.log(12, xMessage);
 	});
 
 	plugin.readMessages()
 	await new Promise((resolve) => setTimeout(resolve, 100));
-
 };
 
 createRoot(createApp);
